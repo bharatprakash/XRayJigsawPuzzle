@@ -8,7 +8,7 @@ Created on Fri Sep 22 16:53:30 2017
 def adjust_learning_rate(optimizer, epoch, init_lr=0.1, step=30, decay=0.1):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
     lr = init_lr * (decay ** (epoch // step))
-    print 'Learning Rate %f'%lr
+    print ('Learning Rate %f'%lr)
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     return lr
@@ -27,4 +27,3 @@ def compute_accuracy(output, target, topk=(1,)):
         correct_k = correct[:k].view(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
-

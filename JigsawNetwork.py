@@ -51,7 +51,7 @@ class Network(nn.Module):
 
         self.classifier = nn.Sequential()
         self.classifier.add_module('fc8',nn.Linear(4096, classes))
-        
+
         #self.apply(weights_init)
 
     def load(self,checkpoint):
@@ -60,11 +60,11 @@ class Network(nn.Module):
         pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict and 'fc8' not in k}
         model_dict.update(pretrained_dict)
         self.load_state_dict(model_dict)
-        print [k for k, v in pretrained_dict.items()]
+        print([k for k, v in pretrained_dict.items()])
 
     def save(self,checkpoint):
         torch.save(self.state_dict(), checkpoint)
-    
+
     def forward(self, x):
         B,T,C,H,W = x.size()
         x = x.transpose(0,1)
@@ -87,4 +87,3 @@ def weights_init(model):
     if type(model) in [nn.Conv2d,nn.Linear]:
         nn.init.xavier_normal(model.weight.data)
         nn.init.constant(model.bias.data, 0.1)
-    

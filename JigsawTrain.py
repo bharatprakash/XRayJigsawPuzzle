@@ -50,7 +50,7 @@ def main():
     else:
         print('CPU mode')
 
-    print 'Process number: %d'%(os.getpid())
+    print ('Process number: %d'%(os.getpid()))
 
     ## DataLoader initialize ILSVRC2012_train_processed
     # /Users/bharatprakash/dev/vision/project/images
@@ -76,7 +76,7 @@ def main():
     N = train_data.N
 
     iter_per_epoch = train_data.N/args.batch
-    print 'Images: train %d, validation %d'%(train_data.N,val_data.N)
+    print( 'Images: train %d, validation %d'%(train_data.N,val_data.N))
 
     # Network initialize
     net = Network(args.classes)
@@ -92,7 +92,7 @@ def main():
             ckp = files[-1]
             net.load_state_dict(torch.load(args.checkpoint+'/'+ckp))
             args.iter_start = int(ckp.split(".")[-3].split("_")[-1])
-            print 'Starting from: ',ckp
+            print ('Starting from: ',ckp)
         else:
             if args.model is not None:
                 net.load(args.model)
@@ -151,9 +151,6 @@ def main():
             optimizer.step()
             loss = float(loss.cpu().data.numpy())
 
-            print("-------")
-            print("i:", i)
-            print("Steps:", steps, "---- steps%10", steps%10)
             if steps%10==0:
                 print ('[%2d/%2d] %5d) [batch load % 2.3fsec, net %1.2fsec], LR %.5f, Loss: % 1.3f, Accuracy % 2.2f%%' %(
                             epoch+1, args.epochs, steps,
@@ -178,7 +175,7 @@ def main():
             if steps%1000==0:
                 filename = '%s/jps_%03i_%06d.pth.tar'%(args.checkpoint,epoch,steps)
                 net.save(filename)
-                print 'Saved: '+args.checkpoint
+                print ('Saved: '+args.checkpoint)
 
             end = time()
 
@@ -187,7 +184,7 @@ def main():
             break
 
 def test(net,criterion,logger,val_loader,steps):
-    print 'Evaluating network.......'
+    print('Evaluating network.......')
     accuracy = []
     net.eval()
     for i, (images, labels, _) in enumerate(val_loader):
@@ -204,7 +201,7 @@ def test(net,criterion,logger,val_loader,steps):
 
     if logger is not None:
         logger.scalar_summary('accuracy', np.mean(accuracy), steps)
-    print 'TESTING: %d), Accuracy %.2f%%' %(steps,np.mean(accuracy))
+    print('TESTING: %d), Accuracy %.2f%%' %(steps,np.mean(accuracy)))
     net.train()
 
 if __name__ == "__main__":
