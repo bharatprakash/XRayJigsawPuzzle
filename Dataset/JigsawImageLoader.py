@@ -14,9 +14,9 @@ import pandas as pd
 from PIL import Image
 
 class DataLoader(data.Dataset):
-    def __init__(self,data_path,txt_list,classes=1000):
+    def __init__(self, data_path, txt_list, n, classes=1000):
         self.data_path = data_path
-        self.names, _ = self.__dataset_info_Panda(txt_list)
+        self.names, _ = self.__dataset_info_Panda(txt_list, n)
         self.N = len(self.names)
         self.permutations = self.__retrive_permutations(classes)
 
@@ -83,13 +83,14 @@ class DataLoader(data.Dataset):
 
         return file_names, labels
 
-    def __dataset_info_Panda(self,txt_labels):
+    def __dataset_info_Panda(self, txt_labels, n):
         df = pd.read_csv(txt_labels)
-        df = df[:50]
-
+        if (n > 0):
+            df = df[:n]
+        else:
+            df- df[-n:]
         file_names = list(df['Image Index'])
         labels     = list(df['Finding Labels'])
-
         return file_names, labels
 
     def __retrive_permutations(self,classes):

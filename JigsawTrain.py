@@ -57,8 +57,7 @@ def main():
     trainpath = args.data
     if os.path.exists(trainpath+'_255x255'):
         trainpath += '_255x255'
-    train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv',
-                            classes=args.classes)
+    train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv', 10, classes=args.classes)
     train_loader = torch.utils.data.DataLoader(dataset=train_data,
                                             batch_size=args.batch,
                                             shuffle=True,
@@ -67,8 +66,7 @@ def main():
     valpath = args.data
     if os.path.exists(valpath+'_255x255'):
         valpath += '_255x255'
-    val_data = DataLoader(valpath, args.data+'/Data_Entry_2017.csv',
-                            classes=args.classes)
+    val_data = DataLoader(valpath, args.data+'/Data_Entry_2017.csv', 5, classes=args.classes)
     val_loader = torch.utils.data.DataLoader(dataset=val_data,
                                             batch_size=args.batch,
                                             shuffle=True,
