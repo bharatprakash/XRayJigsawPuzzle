@@ -88,7 +88,7 @@ class DataLoader(data.Dataset):
         if (n > 0):
             df = df[:n]
         else:
-            df- df[-n:]
+            df = df[n:]
         file_names = list(df['Image Index'])
         labels     = list(df['Finding Labels'])
         return file_names, labels
