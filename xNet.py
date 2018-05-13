@@ -34,7 +34,7 @@ class Network(nn.Module):
         self.conv.add_module('pool5_s1',nn.MaxPool2d(kernel_size=3, stride=2))
 
         self.fc6 = nn.Sequential()
-        self.fc6.add_module('fc6_s1',nn.Linear(256*12*12, 1024))
+        self.fc6.add_module('fc6_s1',nn.Linear(256*14*14, 1024))
         self.fc6.add_module('relu6_s1',nn.ReLU(inplace=True))
         self.fc6.add_module('drop6_s1',nn.Dropout(p=0.5))
 
@@ -61,7 +61,7 @@ class Network(nn.Module):
     def forward(self, x):
         B,C,H,W = x.size()
         x = self.conv(x)
-        x = x.view(x.size(0), 256*12*12)
+        x = x.view(x.size(0), 256*14*14)
         x = self.fc6(x)
         x = self.fc7(x)
         x = self.classifier(x)

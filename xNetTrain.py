@@ -47,15 +47,20 @@ def main():
     # /Users/bharatprakash/dev/vision/project/images
     trainpath = args.data
     train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv', 10)
+
+    #trainpath = args.data + "/images"
+    #train_data = DataLoader(trainpath,args.data+'/labels.txt', 200)
+
     train_loader = torch.utils.data.DataLoader(dataset=train_data,
                                             batch_size=args.batch,
                                             shuffle=True,
                                             num_workers=args.cores)
 
     valpath = args.data
-    if os.path.exists(valpath+'_255x255'):
-        valpath += '_255x255'
     val_data = DataLoader(valpath, args.data+'/Data_Entry_2017.csv', 5)
+
+    #valpath = args.data + "/images"
+    #val_data = DataLoader(valpath, args.data+'/labels.txt', 20)
     val_loader = torch.utils.data.DataLoader(dataset=val_data,
                                             batch_size=args.batch,
                                             shuffle=True,
@@ -117,7 +122,7 @@ def main():
                 del batch_time[0]
 
             images = Variable(images)
-            labels = Variable(labels)
+            labels = Variable(labels).long()
             if args.gpu is not None:
                 images = images.cuda()
                 labels = labels.cuda()
@@ -130,8 +135,8 @@ def main():
             if len(net_time)>100:
                 del net_time[0]
 
-            #prec1, prec5 = compute_accuracy(outputs.cpu().data, labels.cpu().data, topk=(1, 2))
-            acc = 0#prec1[0]
+            prec1, prec5 = compute_accuracy(outputs.cpu().data, labels.cpu().data, topk=(1, 2))
+            acc = prec1[0]
 
             loss = criterion(outputs, labels)
             loss.backward()
@@ -143,19 +148,6 @@ def main():
                             epoch+1, args.epochs, steps,
                             np.mean(batch_time), np.mean(net_time),
                             lr, loss,acc))
-
-            if steps%20==0:
-                logger.scalar_summary('accuracy', acc, steps)
-                logger.scalar_summary('loss', loss, steps)
-
-                original = [im[0] for im in original]
-                imgs = np.zeros([9,75,75,3])
-                for ti, img in enumerate(original):
-                    img = img.numpy()
-                    imgs[ti] = np.stack([(im-im.min())/(im.max()-im.min())
-                                         for im in img],axis=2)
-
-                logger.image_summary('input', imgs, steps)
 
             steps += 1
 
@@ -183,7 +175,7 @@ def test(net,criterion,logger,val_loader,steps):
         outputs = net(images)
         outputs = outputs.cpu().data
 
-        #prec1, prec5 = compute_accuracy(outputs, labels, topk=(1, 5))
+        prec1, prec5 = compute_accuracy(outputs, labels, topk=(1, 2))
         accuracy.append(prec1[0])
 
     if logger is not None:
