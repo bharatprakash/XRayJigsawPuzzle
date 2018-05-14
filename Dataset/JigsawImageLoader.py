@@ -14,19 +14,20 @@ import pandas as pd
 from PIL import Image
 
 class DataLoader(data.Dataset):
-    def __init__(self, data_path, txt_list, n, classes=1000):
+    def __init__(self, data_path, txt_list, n, classes=50):
         self.data_path = data_path
         self.names, _ = self.__dataset_info_Panda(txt_list, n)
         self.N = len(self.names)
-        self.permutations = self.__retrive_permutations(classes)
+        permutations = self.__retrive_permutations(1000)
+        self.permutations = permutations[:classes]
 
         self.__image_transformer = transforms.Compose([
-                            transforms.Resize(256,Image.BILINEAR),
-                            transforms.CenterCrop(255)])
+                            transforms.Resize(225,Image.BILINEAR),
+                            transforms.CenterCrop(225)])
         self.__augment_tile = transforms.Compose([
                     transforms.RandomCrop(64),
-                    transforms.Resize((75,75),Image.BILINEAR),
-                    transforms.Lambda(rgb_jittering),
+                    #transforms.Resize((75,75),Image.BILINEAR),
+                    #transforms.Lambda(rgb_jittering), #revisit
                     transforms.ToTensor(),
                     #transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                          #std =[0.229, 0.224, 0.225])
@@ -36,10 +37,10 @@ class DataLoader(data.Dataset):
         framename = self.data_path+'/'+self.names[index]
 
         img = Image.open(framename).convert('RGB')
-        if np.random.rand()<0.30:
-            img = img.convert('LA').convert('RGB')
+        #if np.random.rand()<0.30:
+        #    img = img.convert('LA').convert('RGB')
 
-        if img.size[0]!=255:
+        if img.size[0]!=225:
             img = self.__image_transformer(img)
 
         s = float(img.size[0])/3
@@ -50,7 +51,7 @@ class DataLoader(data.Dataset):
             j = n%3
             c = [a*i*2+a,a*j*2+a]
             #c = np.array([c[1]-a,c[0]-a,c[1]+a+1,c[0]+a+1]).astype(int)
-            c = np.array([i*85, j*85, (i+1)*85, (j+1)*85]).astype(int)
+            c = np.array([i*75, j*75, (i+1)*75, (j+1)*75]).astype(int)
             tile = img.crop(c.tolist())
             tile = self.__augment_tile(tile)
             # Normalize the patches indipendently to avoid low level features shortcut

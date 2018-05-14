@@ -160,7 +160,7 @@ def main():
                 logger.scalar_summary('loss', loss, steps)
 
                 original = [im[0] for im in original]
-                imgs = np.zeros([9,75,75,3])
+                imgs = np.zeros([9,64,64,3])
                 for ti, img in enumerate(original):
                     img = img.numpy()
                     imgs[ti] = np.stack([(im-im.min())/(im.max()-im.min())
