@@ -26,7 +26,7 @@ from TrainingUtils import adjust_learning_rate, compute_accuracy
 parser = argparse.ArgumentParser(description='Train JigsawPuzzleSolver on Imagenet')
 parser.add_argument('data', type=str, help='Path to Imagenet folder')
 parser.add_argument('--model', default=None, type=str, help='Path to pretrained model')
-parser.add_argument('--classes', default=1000, type=int, help='Number of permutation to use')
+parser.add_argument('--classes', default=10, type=int, help='Number of permutation to use')
 parser.add_argument('--gpu', default=None, type=int, help='gpu id')
 parser.add_argument('--epochs', default=70, type=int, help='number of total epochs for training')
 parser.add_argument('--iter_start', default=0, type=int, help='Starting iteration count')
@@ -55,18 +55,14 @@ def main():
     ## DataLoader initialize ILSVRC2012_train_processed
     # /Users/bharatprakash/dev/vision/project/images
     trainpath = args.data
-    if os.path.exists(trainpath+'_255x255'):
-        trainpath += '_255x255'
-    train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv', 10, classes=args.classes)
+    train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv', 100, classes=args.classes)
     train_loader = torch.utils.data.DataLoader(dataset=train_data,
                                             batch_size=args.batch,
                                             shuffle=True,
                                             num_workers=args.cores)
 
     valpath = args.data
-    if os.path.exists(valpath+'_255x255'):
-        valpath += '_255x255'
-    val_data = DataLoader(valpath, args.data+'/Data_Entry_2017.csv', 5, classes=args.classes)
+    val_data = DataLoader(valpath, args.data+'/Data_Entry_2017.csv', 10, classes=args.classes)
     val_loader = torch.utils.data.DataLoader(dataset=val_data,
                                             batch_size=args.batch,
                                             shuffle=True,
@@ -160,12 +156,10 @@ def main():
                 logger.scalar_summary('loss', loss, steps)
 
                 original = [im[0] for im in original]
-                imgs = np.zeros([9,64,64,3])
+                imgs = np.zeros([9,64,64])
                 for ti, img in enumerate(original):
                     img = img.numpy()
-                    imgs[ti] = np.stack([(im-im.min())/(im.max()-im.min())
-                                         for im in img],axis=2)
-
+                    imgs[ti] = np.stack([(im-im.min())/(im.max()-im.min()) for im in img])
                 logger.image_summary('input', imgs, steps)
 
             steps += 1
