@@ -14,7 +14,7 @@ import pandas as pd
 from PIL import Image
 
 class DataLoader(data.Dataset):
-    def __init__(self, data_path, txt_list, n, classes=50):
+    def __init__(self, data_path, txt_list, n, classes=10):
         self.data_path = data_path
         self.names, _ = self.__dataset_info_Panda(txt_list, n)
         self.N = len(self.names)
@@ -36,9 +36,10 @@ class DataLoader(data.Dataset):
     def __getitem__(self, index):
         framename = self.data_path+'/'+self.names[index]
 
-        img = Image.open(framename).convert('RGB')
-        #if np.random.rand()<0.30:
-        #    img = img.convert('LA').convert('RGB')
+        img = Image.open(framename).convert('L')
+        if (len(np.array(img).shape) > 2):
+            img = np.array(img.convert('L'))
+            img = Image.fromarray(img)
 
         if img.size[0]!=225:
             img = self.__image_transformer(img)
@@ -55,7 +56,7 @@ class DataLoader(data.Dataset):
             tile = img.crop(c.tolist())
             tile = self.__augment_tile(tile)
             # Normalize the patches indipendently to avoid low level features shortcut
-            m, s = tile.view(3,-1).mean(dim=1).numpy(), tile.view(3,-1).std(dim=1).numpy()
+            m, s = tile.view(1,-1).mean(dim=1).numpy(), tile.view(1,-1).std(dim=1).numpy()
             s[s==0]=1
             norm = transforms.Normalize(mean=m.tolist(),std=s.tolist())
             tile = norm(tile)
