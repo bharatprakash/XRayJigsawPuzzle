@@ -24,7 +24,7 @@ parser.add_argument('--gpu', default=None, type=int, help='gpu id')
 parser.add_argument('--epochs', default=70, type=int, help='number of total epochs for training')
 parser.add_argument('--iter_start', default=0, type=int, help='Starting iteration count')
 parser.add_argument('--batch', default=256, type=int, help='batch size')
-parser.add_argument('--checkpoint', default='checkpoints/', type=str, help='checkpoint folder')
+parser.add_argument('--checkpoint', default='xCheckpoints/', type=str, help='checkpoint folder')
 parser.add_argument('--lr', default=0.001, type=float, help='learning rate for SGD optimizer')
 parser.add_argument('--cores', default=0, type=int, help='number of CPU core for loading')
 parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
@@ -43,13 +43,11 @@ def main():
 
     print ('Process number: %d'%(os.getpid()))
 
-    ## DataLoader initialize ILSVRC2012_train_processed
-    # /Users/bharatprakash/dev/vision/project/images
     trainpath = args.data
     train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv', 10)
 
-    #trainpath = args.data + "/images"
-    #train_data = DataLoader(trainpath,args.data+'/labels.txt', 200)
+    # trainpath = args.data + "/train_img"
+    # train_data = DataLoader(trainpath,args.data+'/train', 10)
 
     train_loader = torch.utils.data.DataLoader(dataset=train_data,
                                             batch_size=args.batch,
@@ -59,8 +57,8 @@ def main():
     valpath = args.data
     val_data = DataLoader(valpath, args.data+'/Data_Entry_2017.csv', 5)
 
-    #valpath = args.data + "/images"
-    #val_data = DataLoader(valpath, args.data+'/labels.txt', 20)
+    # valpath = args.data + "/train_img"
+    # val_data = DataLoader(valpath, args.data+'/train', 20)
     val_loader = torch.utils.data.DataLoader(dataset=val_data,
                                             batch_size=args.batch,
                                             shuffle=True,
@@ -71,11 +69,13 @@ def main():
     print( 'Images: train %d, validation %d'%(train_data.N,val_data.N))
 
     # Network initialize
-    net = Network(args.classes)
+    net = Network(train_data.classes)
     if args.gpu is not None:
         net.cuda()
 
     ############## Load from checkpoint if exists, otherwise from model ###############
+    # COMMENTED FOR NOW TODO: ...
+    '''
     if os.path.exists(args.checkpoint):
         files = [f for f in os.listdir(args.checkpoint) if 'pth' in f]
         if len(files)>0:
@@ -91,8 +91,9 @@ def main():
     else:
         if args.model is not None:
             net.load(args.model)
+    '''
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.MultiLabelMarginLoss()
     optimizer = torch.optim.SGD(net.parameters(),lr=args.lr,momentum=0.9,weight_decay = 5e-4)
 
     logger = Logger(args.checkpoint+'/train')
@@ -104,7 +105,7 @@ def main():
         return
 
     ############## TRAINING ###############
-    print('Start training: lr %f, batch size %d, classes %d'%(args.lr,args.batch,args.classes))
+    print('Start training: lr %f, batch size %d, classes %d'%(args.lr,args.batch,train_data.classes))
     print('Checkpoint: '+args.checkpoint)
 
     # Train the Model
@@ -135,8 +136,12 @@ def main():
             if len(net_time)>100:
                 del net_time[0]
 
-            prec1, prec5 = compute_accuracy(outputs.cpu().data, labels.cpu().data, topk=(1, 2))
-            acc = prec1[0]
+            # print(labels.cpu().data)
+            # print(outputs.cpu().data > 0.5)
+
+            #TODO: COMPUTING ACCURACY
+            #prec1, prec5 = compute_accuracy(outputs.cpu().data, labels.cpu().data, topk=(1, 2))
+            acc = 0#prec1[0]
 
             loss = criterion(outputs, labels)
             loss.backward()

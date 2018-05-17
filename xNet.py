@@ -9,11 +9,11 @@ from Layers import LRN
 
 class Network(nn.Module):
 
-    def __init__(self, classes=2):
+    def __init__(self, classes):
         super(Network, self).__init__()
 
         self.conv = nn.Sequential()
-        self.conv.add_module('conv1_s1',nn.Conv2d(3, 96, kernel_size=11, stride=2, padding=0))
+        self.conv.add_module('conv1_s1',nn.Conv2d(1, 96, kernel_size=11, stride=2, padding=0))
         self.conv.add_module('relu1_s1',nn.ReLU(inplace=True))
         self.conv.add_module('pool1_s1',nn.MaxPool2d(kernel_size=3, stride=2))
         self.conv.add_module('lrn1_s1',LRN(local_size=5, alpha=0.0001, beta=0.75))
@@ -34,7 +34,7 @@ class Network(nn.Module):
         self.conv.add_module('pool5_s1',nn.MaxPool2d(kernel_size=3, stride=2))
 
         self.fc6 = nn.Sequential()
-        self.fc6.add_module('fc6_s1',nn.Linear(256*14*14, 1024))
+        self.fc6.add_module('fc6_s1',nn.Linear(256*12*12, 1024))
         self.fc6.add_module('relu6_s1',nn.ReLU(inplace=True))
         self.fc6.add_module('drop6_s1',nn.Dropout(p=0.5))
 
@@ -45,7 +45,6 @@ class Network(nn.Module):
 
         self.classifier = nn.Sequential()
         self.classifier.add_module('fc8',nn.Linear(4096, classes))
-        #self.classifier.add_module('sigmoid',nn.Sigmoid())
 
     def load(self,checkpoint):
         model_dict = self.state_dict()
@@ -61,9 +60,9 @@ class Network(nn.Module):
     def forward(self, x):
         B,C,H,W = x.size()
         x = self.conv(x)
-        x = x.view(x.size(0), 256*14*14)
+        x = x.view(x.size(0), 256*12*12)
         x = self.fc6(x)
         x = self.fc7(x)
-        x = self.classifier(x)
+        x = torch.sigmoid(self.classifier(x))
 
         return x
