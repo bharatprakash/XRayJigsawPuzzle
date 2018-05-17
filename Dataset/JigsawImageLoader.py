@@ -22,24 +22,18 @@ class DataLoader(data.Dataset):
         self.permutations = permutations[:classes]
 
         self.__image_transformer = transforms.Compose([
-                            transforms.Resize(225,Image.BILINEAR),
-                            transforms.CenterCrop(225)])
+                            transforms.Resize(384,Image.BILINEAR),
+                            transforms.RandomCrop(225)])
         self.__augment_tile = transforms.Compose([
                     transforms.RandomCrop(64),
                     #transforms.Resize((75,75),Image.BILINEAR),
                     #transforms.Lambda(rgb_jittering), #revisit
-                    transforms.ToTensor(),
-                    #transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                         #std =[0.229, 0.224, 0.225])
-                                         ])
+                    transforms.ToTensor()])
 
     def __getitem__(self, index):
         framename = self.data_path+'/'+self.names[index]
 
         img = Image.open(framename).convert('L')
-        if (len(np.array(img).shape) > 2):
-            img = np.array(img.convert('L'))
-            img = Image.fromarray(img)
 
         if img.size[0]!=225:
             img = self.__image_transformer(img)

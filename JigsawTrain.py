@@ -23,7 +23,7 @@ from JigsawNetwork import Network
 from TrainingUtils import adjust_learning_rate, compute_accuracy
 
 
-parser = argparse.ArgumentParser(description='Train JigsawPuzzleSolver on Imagenet')
+parser = argparse.ArgumentParser(description='Train JigsawPuzzleSolver on XRay14')
 parser.add_argument('data', type=str, help='Path to Imagenet folder')
 parser.add_argument('--model', default=None, type=str, help='Path to pretrained model')
 parser.add_argument('--classes', default=10, type=int, help='Number of permutation to use')
@@ -31,7 +31,7 @@ parser.add_argument('--gpu', default=None, type=int, help='gpu id')
 parser.add_argument('--epochs', default=70, type=int, help='number of total epochs for training')
 parser.add_argument('--iter_start', default=0, type=int, help='Starting iteration count')
 parser.add_argument('--batch', default=256, type=int, help='batch size')
-parser.add_argument('--checkpoint', default='checkpoints/', type=str, help='checkpoint folder')
+parser.add_argument('--checkpoint', default='checkpoints/exp', type=str, help='checkpoint folder')
 parser.add_argument('--lr', default=0.001, type=float, help='learning rate for SGD optimizer')
 parser.add_argument('--cores', default=0, type=int, help='number of CPU core for loading')
 parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
@@ -52,17 +52,16 @@ def main():
 
     print ('Process number: %d'%(os.getpid()))
 
-    ## DataLoader initialize ILSVRC2012_train_processed
-    # /Users/bharatprakash/dev/vision/project/images
+    ## DataLoader
     trainpath = args.data
-    train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv', 100, classes=args.classes)
+    train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv', 50, classes=args.classes)
     train_loader = torch.utils.data.DataLoader(dataset=train_data,
                                             batch_size=args.batch,
                                             shuffle=True,
                                             num_workers=args.cores)
 
     valpath = args.data
-    val_data = DataLoader(valpath, args.data+'/Data_Entry_2017.csv', 10, classes=args.classes)
+    val_data = DataLoader(valpath, args.data+'/Data_Entry_2017.csv', 5, classes=args.classes)
     val_loader = torch.utils.data.DataLoader(dataset=val_data,
                                             batch_size=args.batch,
                                             shuffle=True,
@@ -113,8 +112,8 @@ def main():
     batch_time, net_time = [], []
     steps = args.iter_start
     for epoch in range(int(args.iter_start/iter_per_epoch),args.epochs):
-        #if epoch%10==0 and epoch>0:
-        #    test(net,criterion,logger_test,val_loader,steps)
+        if epoch%10==0 and epoch>0:
+            test(net,criterion,logger_test,val_loader,steps)
         lr = adjust_learning_rate(optimizer, epoch, init_lr=args.lr, step=20, decay=0.1)
         print("epoch - " , epoch)
         end = time()
@@ -138,7 +137,7 @@ def main():
                 del net_time[0]
 
             prec1, prec5 = compute_accuracy(outputs.cpu().data, labels.cpu().data, topk=(1, 5))
-            acc = prec1[0]
+            acc = prec1.item()
 
             loss = criterion(outputs, labels)
             loss.backward()
@@ -189,7 +188,7 @@ def test(net,criterion,logger,val_loader,steps):
         outputs = outputs.cpu().data
 
         prec1, prec5 = compute_accuracy(outputs, labels, topk=(1, 5))
-        accuracy.append(prec1[0])
+        accuracy.append(prec1.item())
 
     if logger is not None:
         logger.scalar_summary('accuracy', np.mean(accuracy), steps)

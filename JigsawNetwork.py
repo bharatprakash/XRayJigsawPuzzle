@@ -88,5 +88,5 @@ class Network(nn.Module):
 
 def weights_init(model):
     if type(model) in [nn.Conv2d,nn.Linear]:
-        nn.init.xavier_normal(model.weight.data)
-        nn.init.constant(model.bias.data, 0.1)
+        nn.init.xavier_normal_(model.weight.data)
+        nn.init.constant_(model.bias.data, 0.1)
