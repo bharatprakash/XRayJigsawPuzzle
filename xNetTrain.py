@@ -15,6 +15,7 @@ sys.path.append('Dataset')
 from xNet import Network
 
 from TrainingUtils import adjust_learning_rate, compute_accuracy
+from sklearn.metrics import hamming_loss
 
 parser = argparse.ArgumentParser(description='Train JigsawPuzzleSolver on Imagenet')
 parser.add_argument('data', type=str, help='Path to Imagenet folder')
@@ -43,22 +44,22 @@ def main():
 
     print ('Process number: %d'%(os.getpid()))
 
-    trainpath = args.data
-    train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv', 10)
+    # trainpath = args.data
+    # train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv', 6)
 
-    # trainpath = args.data + "/train_img"
-    # train_data = DataLoader(trainpath,args.data+'/train', 10)
+    trainpath = args.data + "/train_img"
+    train_data = DataLoader(trainpath,args.data+'/train', 1200)
 
     train_loader = torch.utils.data.DataLoader(dataset=train_data,
                                             batch_size=args.batch,
                                             shuffle=True,
                                             num_workers=args.cores)
 
-    valpath = args.data
-    val_data = DataLoader(valpath, args.data+'/Data_Entry_2017.csv', 5)
+    # valpath = args.data
+    # val_data = DataLoader(valpath, args.data+'/Data_Entry_2017.csv', 4)
 
-    # valpath = args.data + "/train_img"
-    # val_data = DataLoader(valpath, args.data+'/train', 20)
+    valpath = args.data + "/train_img"
+    val_data = DataLoader(valpath, args.data+'/test', 200)
     val_loader = torch.utils.data.DataLoader(dataset=val_data,
                                             batch_size=args.batch,
                                             shuffle=True,
@@ -93,7 +94,7 @@ def main():
             net.load(args.model)
     '''
 
-    criterion = nn.MultiLabelMarginLoss()
+    criterion = nn.MultiLabelSoftMarginLoss()
     optimizer = torch.optim.SGD(net.parameters(),lr=args.lr,momentum=0.9,weight_decay = 5e-4)
 
     logger = Logger(args.checkpoint+'/train')
@@ -112,10 +113,12 @@ def main():
     batch_time, net_time = [], []
     steps = args.iter_start
     for epoch in range(int(args.iter_start/iter_per_epoch),args.epochs):
-        #if epoch%10==0 and epoch>0:
-        #    test(net,criterion,logger_test,val_loader,steps)
+        if epoch%5==0 and epoch>0:
+            test(net,criterion,logger_test,val_loader,steps)
         lr = adjust_learning_rate(optimizer, epoch, init_lr=args.lr, step=20, decay=0.1)
         print("epoch - " , epoch)
+        correct = 0
+
         end = time()
         for i, (images, labels) in enumerate(train_loader):
             batch_time.append(time()-end)
@@ -123,7 +126,7 @@ def main():
                 del batch_time[0]
 
             images = Variable(images)
-            labels = Variable(labels).long()
+            labels = Variable(labels).float()
             if args.gpu is not None:
                 images = images.cuda()
                 labels = labels.cuda()
@@ -136,9 +139,6 @@ def main():
             if len(net_time)>100:
                 del net_time[0]
 
-            # print(labels.cpu().data)
-            # print(outputs.cpu().data > 0.5)
-
             #TODO: COMPUTING ACCURACY
             #prec1, prec5 = compute_accuracy(outputs.cpu().data, labels.cpu().data, topk=(1, 2))
             acc = 0#prec1[0]
@@ -148,11 +148,19 @@ def main():
             optimizer.step()
             loss = float(loss.cpu().data.numpy())
 
+            #correct += (sample['label'] == preds).sum(1).eq(11).sum()
+            L = np.array(labels.cpu().data)
+            O = np.array(outputs.cpu().data > 0.5)
+
+            corr = (L == O)
+            correct += int(np.sum(corr.sum(1) == np.array([5,5,5,5,5])))
+
+
             if steps%10==0:
                 print ('[%2d/%2d] %5d) [batch load % 2.3fsec, net %1.2fsec], LR %.5f, Loss: % 1.3f, Accuracy % 2.2f%%' %(
                             epoch+1, args.epochs, steps,
                             np.mean(batch_time), np.mean(net_time),
-                            lr, loss,acc))
+                            lr, loss,correct))
 
             steps += 1
 
@@ -162,6 +170,9 @@ def main():
                 print ('Saved: '+args.checkpoint)
 
             end = time()
+
+        acc = correct * 100 / len(train_data)
+        print("Accuracy: ", acc)
 
         if os.path.exists(args.checkpoint+'/stop.txt'):
             # break without using CTRL+C

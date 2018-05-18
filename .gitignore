@@ -2,6 +2,7 @@
 *.pyc
 .DS_store
 checkpoints/
+xCheckpoints/
 *.out
 *.tmp
 *.swp

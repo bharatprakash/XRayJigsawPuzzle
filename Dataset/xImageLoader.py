@@ -12,9 +12,9 @@ from collections import Counter
 class DataLoader(data.Dataset):
     def __init__(self, data_path, txt_list, n):
         self.data_path = data_path
-        self.names, self.labels = self.__dataset_info_Panda(txt_list, n)
+        #self.names, self.labels = self.__dataset_info_Panda(txt_list, n)
         #self.names, self.labels = self.__dataset_CatDog(txt_list, n)
-        #self.names, self.labels = self.__dataset_Multi(txt_list, n)
+        self.names, self.labels = self.__dataset_Multi(txt_list, n)
         self.N = len(self.names)
 
         self.__image_transformer = transforms.Compose([
@@ -29,7 +29,7 @@ class DataLoader(data.Dataset):
 
         img = self.__image_transformer(img)
         label = self.labels[index]
-        return img, label
+        return img, torch.from_numpy(label)
 
 
     def __len__(self):
