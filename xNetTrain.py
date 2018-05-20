@@ -32,6 +32,8 @@ parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
                     help='evaluate model on validation set, No training')
 args = parser.parse_args()
 
+dtype = torch.FloatTensor
+
 from xImageLoader import DataLoader
 
 def main():
@@ -48,7 +50,7 @@ def main():
     # train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv', 6)
 
     trainpath = args.data + "/train_img"
-    train_data = DataLoader(trainpath,args.data+'/train', 1200)
+    train_data = DataLoader(trainpath,args.data+'/train', 10)
 
     train_loader = torch.utils.data.DataLoader(dataset=train_data,
                                             batch_size=args.batch,
@@ -58,8 +60,8 @@ def main():
     # valpath = args.data
     # val_data = DataLoader(valpath, args.data+'/Data_Entry_2017.csv', 4)
 
-    valpath = args.data + "/train_img"
-    val_data = DataLoader(valpath, args.data+'/test', 200)
+    valpath = args.data + "/test_img"
+    val_data = DataLoader(valpath, args.data+'/test', 5)
     val_loader = torch.utils.data.DataLoader(dataset=val_data,
                                             batch_size=args.batch,
                                             shuffle=True,
@@ -117,7 +119,8 @@ def main():
             test(net,criterion,logger_test,val_loader,steps)
         lr = adjust_learning_rate(optimizer, epoch, init_lr=args.lr, step=20, decay=0.1)
         print("epoch - " , epoch)
-        correct = 0
+        meanHammingLoss = 0
+        hammLosses = []
 
         end = time()
         for i, (images, labels) in enumerate(train_loader):
@@ -125,8 +128,8 @@ def main():
             if len(batch_time)>100:
                 del batch_time[0]
 
-            images = Variable(images)
-            labels = Variable(labels).float()
+            images = Variable(images).type(dtype)
+            labels = Variable(labels).type(dtype)
             if args.gpu is not None:
                 images = images.cuda()
                 labels = labels.cuda()
@@ -139,10 +142,6 @@ def main():
             if len(net_time)>100:
                 del net_time[0]
 
-            #TODO: COMPUTING ACCURACY
-            #prec1, prec5 = compute_accuracy(outputs.cpu().data, labels.cpu().data, topk=(1, 2))
-            acc = 0#prec1[0]
-
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
@@ -150,17 +149,20 @@ def main():
 
             #correct += (sample['label'] == preds).sum(1).eq(11).sum()
             L = np.array(labels.cpu().data)
-            O = np.array(outputs.cpu().data > 0.5)
+            O = np.array(torch.sigmoid(outputs).cpu().data > 0.5)
 
-            corr = (L == O)
-            correct += int(np.sum(corr.sum(1) == np.array([5,5,5,5,5])))
-
+            for l, o in zip(L, O):
+                hammLosses.append(hamming_loss(l, o))
 
             if steps%10==0:
-                print ('[%2d/%2d] %5d) [batch load % 2.3fsec, net %1.2fsec], LR %.5f, Loss: % 1.3f, Accuracy % 2.2f%%' %(
+                print ('[%2d/%2d] %5d) [batch load % 2.3fsec, net %1.2fsec], LR %.5f, Loss: % 1.3f, Mean HL % 2.2f' %(
                             epoch+1, args.epochs, steps,
                             np.mean(batch_time), np.mean(net_time),
-                            lr, loss,correct))
+                            lr, loss,np.mean(hammLosses)))
+
+            if steps%10==0:
+                logger.scalar_summary('hamming_loss', np.mean(hammLosses), steps)
+                logger.scalar_summary('loss', loss, steps)
 
             steps += 1
 
@@ -171,8 +173,9 @@ def main():
 
             end = time()
 
-        acc = correct * 100 / len(train_data)
-        print("Accuracy: ", acc)
+        meanHammingLoss = np.mean(hammLosses)
+        print("Mean HammingLoss: ", meanHammingLoss)
+        print("----------------------------")
 
         if os.path.exists(args.checkpoint+'/stop.txt'):
             # break without using CTRL+C
@@ -181,22 +184,27 @@ def main():
 def test(net,criterion,logger,val_loader,steps):
     print('Evaluating network.......')
     accuracy = []
+    hammLosses = []
     net.eval()
     for i, (images, labels) in enumerate(val_loader):
-        images = Variable(images)
+        images = Variable(images).type(dtype)
+        labels = Variable(labels).type(dtype)
         if args.gpu is not None:
             images = images.cuda()
+            labels = labels.cuda()
 
         # Forward + Backward + Optimize
         outputs = net(images)
-        outputs = outputs.cpu().data
 
-        prec1, prec5 = compute_accuracy(outputs, labels, topk=(1, 2))
-        accuracy.append(prec1[0])
+        L = np.array(labels.cpu().data)
+        O = np.array(torch.sigmoid(outputs).cpu().data > 0.5)
+
+        for l, o in zip(L, O):
+            hammLosses.append(hamming_loss(l, o))
 
     if logger is not None:
-        logger.scalar_summary('accuracy', np.mean(accuracy), steps)
-    print('TESTING: %d), Accuracy %.2f%%' %(steps,np.mean(accuracy)))
+        logger.scalar_summary('hamming_loss', np.mean(hammLosses), steps)
+    print('TESTING: %d), Hamming Loss %.2f%%' %(steps,np.mean(hammLosses)))
     net.train()
 
 if __name__ == "__main__":
