@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Sep 14 12:16:31 2017
-
-@author: Biagio Brattoli
-"""
 import os, sys, numpy as np
 import argparse
 from time import time
@@ -24,7 +19,7 @@ from TrainingUtils import adjust_learning_rate, compute_accuracy
 
 
 parser = argparse.ArgumentParser(description='Train JigsawPuzzleSolver on XRay14')
-parser.add_argument('data', type=str, help='Path to Imagenet folder')
+parser.add_argument('data', type=str, help='Path to Image folder')
 parser.add_argument('--model', default=None, type=str, help='Path to pretrained model')
 parser.add_argument('--classes', default=10, type=int, help='Number of permutation to use')
 parser.add_argument('--gpu', default=None, type=int, help='gpu id')
@@ -54,7 +49,7 @@ def main():
 
     ## DataLoader
     trainpath = args.data
-    train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv', 50, classes=args.classes)
+    train_data = DataLoader(trainpath,args.data+'/Data_Entry_2017.csv', 10, classes=args.classes)
     train_loader = torch.utils.data.DataLoader(dataset=train_data,
                                             batch_size=args.batch,
                                             shuffle=True,
@@ -137,7 +132,7 @@ def main():
                 del net_time[0]
 
             prec1, prec5 = compute_accuracy(outputs.cpu().data, labels.cpu().data, topk=(1, 5))
-            acc = prec1.item()
+            acc = prec1[0]
 
             loss = criterion(outputs, labels)
             loss.backward()
@@ -163,7 +158,7 @@ def main():
 
             steps += 1
 
-            if steps%1000==0:
+            if steps%10==0:
                 filename = '%s/jps_%03i_%06d.pth.tar'%(args.checkpoint,epoch,steps)
                 net.save(filename)
                 print ('Saved: '+args.checkpoint)
@@ -188,7 +183,7 @@ def test(net,criterion,logger,val_loader,steps):
         outputs = outputs.cpu().data
 
         prec1, prec5 = compute_accuracy(outputs, labels, topk=(1, 5))
-        accuracy.append(prec1.item())
+        accuracy.append(prec1[0])
 
     if logger is not None:
         logger.scalar_summary('accuracy', np.mean(accuracy), steps)

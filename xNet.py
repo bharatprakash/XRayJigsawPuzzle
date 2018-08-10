@@ -54,7 +54,7 @@ class Network(nn.Module):
     def load(self,checkpoint):
         model_dict = self.state_dict()
         pretrained_dict = torch.load(checkpoint)
-        pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict and 'fc8' not in k}
+        pretrained_dict = {k: v for k, v in pretrained_dict.items() if 'fc6' not in k and 'fc7' not in k and 'fc8' not in k}
         model_dict.update(pretrained_dict)
         self.load_state_dict(model_dict)
         print([k for k, v in pretrained_dict.items()])
@@ -74,5 +74,5 @@ class Network(nn.Module):
 
 def weights_init(model):
     if type(model) in [nn.Conv2d,nn.Linear]:
-        nn.init.xavier_normal_(model.weight.data)
-        nn.init.constant_(model.bias.data, 0.1)
+        nn.init.xavier_normal(model.weight.data)
+        nn.init.constant(model.bias.data, 0.1)
