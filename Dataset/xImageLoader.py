@@ -43,7 +43,11 @@ class DataLoader(data.Dataset):
         uniqLabels = []
         for key in lblCtr.keys():
             uniqLabels += key.split('|')
-        uniqKeyCounter = Counter(uniqLabels)
+        uniqKeys = []
+        for key in rawLabels:
+            uniqKeys += key.split('|')
+        uniqKeyCounter = Counter(uniqKeys)
+
         uniqLabels = list(set(uniqLabels))
         self.classes = len(uniqLabels)
         mLblBinarizer = MultiLabelBinarizer(classes=uniqLabels)
@@ -59,8 +63,8 @@ class DataLoader(data.Dataset):
 
         totalLabelCount = sum(list(uniqKeyCounter.values()))
         for k, v in uniqKeyCounter.items():
-            uniqKeyCounter[k] = v/totalLabelCount
-
+            uniqKeyCounter[k] = v/float(totalLabelCount)
+        print(uniqKeyCounter)
         weights = []
         for lbl in rawLabels:
             rw = 0
