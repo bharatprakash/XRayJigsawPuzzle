@@ -43,6 +43,7 @@ class DataLoader(data.Dataset):
         uniqLabels = []
         for key in lblCtr.keys():
             uniqLabels += key.split('|')
+        uniqKeyCounter = Counter(uniqLabels)
         uniqLabels = list(set(uniqLabels))
         self.classes = len(uniqLabels)
         mLblBinarizer = MultiLabelBinarizer(classes=uniqLabels)
@@ -56,16 +57,16 @@ class DataLoader(data.Dataset):
         rawLabels = list(df['Finding Labels'])
         tempLabels = []
 
-        totalLabelCount = sum(list(lblCtr.values()))
-        for k, v in lblCtr.items():
-            lblCtr[k] = v/totalLabelCount
+        totalLabelCount = sum(list(uniqKeyCounter.values()))
+        for k, v in uniqKeyCounter.items():
+            uniqKeyCounter[k] = v/totalLabelCount
 
         weights = []
         for lbl in rawLabels:
             rw = 0
             label = lbl.split("|")
             for l in label:
-                rw += lblCtr[l]
+                rw += uniqKeyCounter[l]
             tempLabels.append(label)
             weights.append(1/rw)
 
