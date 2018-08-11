@@ -55,10 +55,12 @@ def main():
     # trainpath = args.data + "/train_img"
     # train_data = DataLoader(trainpath,args.data+'/train', 10)
 
+    sampler = torch.utils.data.sampler.WeightedRandomSampler(train_data.weights, train_data.N)
     train_loader = torch.utils.data.DataLoader(dataset=train_data,
                                             batch_size=args.batch,
-                                            shuffle=True,
-                                            num_workers=args.cores)
+                                            shuffle=False,
+                                            num_workers=args.cores,
+                                            sampler=sampler)
 
     valpath = args.data
     val_data = DataLoader(valpath, args.data+'/Data_Entry_2017.csv', 5)

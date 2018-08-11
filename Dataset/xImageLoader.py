@@ -12,7 +12,7 @@ from collections import Counter
 class DataLoader(data.Dataset):
     def __init__(self, data_path, txt_list, n):
         self.data_path = data_path
-        self.names, self.labels = self.__dataset_info_Panda(txt_list, n)
+        self.names, self.labels, self.weights = self.__dataset_info_Panda(txt_list, n)
         #self.names, self.labels = self.__dataset_CatDog(txt_list, n)
         #self.names, self.labels = self.__dataset_Multi(txt_list, n)
         self.N = len(self.names)
@@ -56,9 +56,18 @@ class DataLoader(data.Dataset):
         rawLabels = list(df['Finding Labels'])
         tempLabels = []
 
+        totalLabelCount = sum(list(lblCtr.values()))
+        for k, v in lblCtr.items():
+            lblCtr[k] = v/totalLabelCount
+
+        weights = []
         for lbl in rawLabels:
+            rw = 0
             label = lbl.split("|")
+            for l in label:
+                rw += lblCtr[l]
             tempLabels.append(label)
+            weights.append(1/rw)
 
         labels = list(mLblBinarizer.fit_transform(tempLabels))
 
@@ -66,7 +75,7 @@ class DataLoader(data.Dataset):
         #    if 'Infiltration' in label:
         #        labels[i] = 1
 
-        return file_names, labels
+        return file_names, labels, weights
 
     def __dataset_Multi(self, txt_labels, n):
 
